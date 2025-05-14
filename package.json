@@ -1,0 +1,37 @@
+{
+  "name": "metanorm",
+  "type": "module",
+  "version": "0.1.0",
+  "description": "random number generator for specified confidence interval",
+  "keywords": [
+    "stats",
+    "statistics",
+    "sampling",
+    "sampler",
+    "monte carlo",
+    "random",
+    "random number generator",
+    "distribution",
+    "metalog",
+    "metanormal",
+    "gaussian",
+    "SPT"
+  ],
+  "dependencies": {
+    "norm-dist": "^3.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.17",
+    "assert-op": "^1.2.0"
+  },
+  "scripts": {
+    "test": "node test",
+    "prepublishOnly": "npm test"
+  },
+  "author": "Hugo Villeneuve",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hville/metanorm.git"
+  }
+}

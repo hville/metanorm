@@ -10,7 +10,7 @@ import icdf from 'norm-dist/icdf-voutier.js'
  * @param {number} [conf] - confidence interval
  * @returns {number => number} - random number generator
  */
-export default function(low, top, [min, med, max], conf=0.8) {
+export default function(low, top, {min, med, max, ci=0.8}={}) {
 	if (top <= low) throw Error('top <= low')
 	if (max !== undefined && max <= top) throw Error('max <= top')
 	if (min !== undefined && low <= min) throw Error('low <= min')
@@ -18,7 +18,7 @@ export default function(low, top, [min, med, max], conf=0.8) {
 
 	// 2bounds
 	if (min !== undefined && max !== undefined) {
-		const [a1,a2,a3,k] = params(conf, low, med, top, x => Math.log( (x-min)/(max-x) ))
+		const [a1,a2,a3,k] = params(ci, low, med, top, x => Math.log( (x-min)/(max-x) ))
 		if (med === undefined) {
 			return z => {
 				const q = Math.exp( a1 + a2*z )
@@ -36,7 +36,7 @@ export default function(low, top, [min, med, max], conf=0.8) {
 
 	// min bound
 	if (min !== undefined) {
-		const [a1,a2,a3,k] = params(conf, low, med, top, x => Math.log( (x-min) ))
+		const [a1,a2,a3,k] = params(ci, low, med, top, x => Math.log( (x-min) ))
 		if (med === undefined)
 			return z => min + Math.exp( a1 + a2*z )
 		else
@@ -47,7 +47,7 @@ export default function(low, top, [min, med, max], conf=0.8) {
 
 	// max bound
 	if (max !== undefined) {
-		const [a1,a2,a3,k] = params(conf, low, med, top, x => -Math.log( (max-x) ))
+		const [a1,a2,a3,k] = params(ci, low, med, top, x => -Math.log( (max-x) ))
 		if (med === undefined)
 			return z => max - Math.exp( -a1 - a2*z )
 		else
@@ -57,7 +57,7 @@ export default function(low, top, [min, med, max], conf=0.8) {
 	}
 
 	// no bounds
-	const [a1,a2,a3,k] = params(conf, low, med, top)
+	const [a1,a2,a3,k] = params(ci, low, med, top)
 	if (med === undefined)
 		return z => a1 + a2*z
 	else
@@ -65,10 +65,10 @@ export default function(low, top, [min, med, max], conf=0.8) {
 }
 
 // x(z) = med + s*z + t*z*z/(1+|z|)
-function params(conf, low, med, top, xfo=x=>x) {
+function params(ci, low, med, top, xfo=x=>x) {
 	const l = xfo(low),
 				t = xfo(top),
-				zq = icdf( 0.5 + conf/2 )
+				zq = icdf( 0.5 + ci/2 )
 	if (med === undefined) return [(t+l)/2, (t-l)/(2*zq), med, med]
 	const m = xfo(med),
 				α = 2*(med-low)/(top-low) - 1,

@@ -1,4 +1,5 @@
 import icdf from 'norm-dist/icdf-voutier.js'
+import parser from './parser.js'
 
 /**
  * MetaNormal Distribution
@@ -10,16 +11,21 @@ import icdf from 'norm-dist/icdf-voutier.js'
  * @param {number} [conf] - confidence interval
  * @returns {number => number} - random number generator
  */
-export default function(low, top, {min, med, max, ci=0.8}={}) {
-	if (top <= low) throw Error('top <= low')
-	if (max !== undefined && max <= top) throw Error('max <= top')
-	if (min !== undefined && low <= min) throw Error('low <= min')
-	if (med !== undefined && (med <= low || top <= med)) throw Error('med <= low || top <= med')
-
+export default function(...args) {
+	const {points, options} = Array.isArray(args[0])
+		? parser(...args)
+		: {points:args, options: typeof args[args.length-1] === 'object' ? args.pop() : {}}
+	const {min, max, ci=0.8} = options,
+				low = points[0],
+				top = points[points.length-1]
+	for (let i=1; i<points.length; i++)
+		if (points[i-1] >= points[i]) throw Error(`out of order points: ${points[i-1]} >= ${points[i]}`)
+	if (max !== undefined && max <= top) throw Error(`max <= ${top}`)
+	if (min !== undefined && low <= min) throw Error(`${low} <= min`)
 	// 2bounds
 	if (min !== undefined && max !== undefined) {
-		const [a1,a2,a3,k] = params(ci, low, med, top, x => Math.log( (x-min)/(max-x) ))
-		if (med === undefined) {
+		const [a1,a2,a3,k] = params(ci, points.map(x => Math.log( (x-min)/(max-x) )))
+		if (a3 === 0) {
 			return z => {
 				const q = Math.exp( a1 + a2*z )
 				return q === Infinity ? max : ( min + max*q ) / ( 1 + q )
@@ -36,8 +42,8 @@ export default function(low, top, {min, med, max, ci=0.8}={}) {
 
 	// min bound
 	if (min !== undefined) {
-		const [a1,a2,a3,k] = params(ci, low, med, top, x => Math.log( (x-min) ))
-		if (med === undefined)
+		const [a1,a2,a3,k] = params(ci, points.map(x => Math.log( (x-min) )))
+		if (a3 === 0)
 			return z => min + Math.exp( a1 + a2*z )
 		else
 			return z => z>0
@@ -47,8 +53,8 @@ export default function(low, top, {min, med, max, ci=0.8}={}) {
 
 	// max bound
 	if (max !== undefined) {
-		const [a1,a2,a3,k] = params(ci, low, med, top, x => -Math.log( (max-x) ))
-		if (med === undefined)
+		const [a1,a2,a3,k] = params(ci, points.map(x => -Math.log( (max-x) )))
+		if (a3 === 0)
 			return z => max - Math.exp( -a1 - a2*z )
 		else
 			return z => z>0
@@ -57,24 +63,28 @@ export default function(low, top, {min, med, max, ci=0.8}={}) {
 	}
 
 	// no bounds
-	const [a1,a2,a3,k] = params(ci, low, med, top)
-	if (med === undefined)
+	const [a1,a2,a3,k] = params(ci, points)
+	if (a3 === 0)
 		return z => a1 + a2*z
 	else
 		return z => z+1===z ? z : a1 + z*(a2 + a3*z/(1+k*Math.abs(z)))
 }
 
 // x(z) = med + s*z + t*z*z/(1+|z|)
-function params(ci, low, med, top, xfo=x=>x) {
-	const l = xfo(low),
-				t = xfo(top),
+function params(ci, points) {
+	if (points.length === 0) return [0, 1, 0, 0] // default: m=0,s=1,t=0,k=0
+	if (points.length === 1) return [points[0], 1, 0, 0] // default: s=1,t=0,k=0
+	const l = points[0],
+				t = points[points.length-1],
 				zq = icdf( 0.5 + ci/2 )
-	if (med === undefined) return [(t+l)/2, (t-l)/(2*zq), med, med]
-	const m = xfo(med),
-				α = 2*(med-low)/(top-low) - 1,
+	if (points.length === 2) return [(t+l)/2, (t-l)/(2*zq), 0, 0]
+	const m = points[1],
+				α = 2*(m-l)/(t-l) - 1,
 				c = 2, // TODO safety constant of 2 to avoid sign switch at Infinity
 				k = c * Math.abs(α) / (zq*(1-Math.abs(α)))
-	return [m, (t-l)/(2*zq), k*(t+l-2*m)*(1+k*zq)/(2*k*zq*zq), k]
+	return k > Number.MIN_VALUE
+		? [m, (t-l)/(2*zq), k*(t+l-2*m)*(1+k*zq)/(2*k*zq*zq), k]
+		: [(t+l)/2, (t-l)/(2*zq), 0, 0]
 }
 
 /**

@@ -12,23 +12,24 @@
 ```javascript
 import meta from 'metanorm'
 
-const n = meta(1, 4, {ci:0.5})(),    // normal distribution with 50% of values between 1 and 4
-      l = meta(1, 4, {min:0}, 0.9)(),    // lognormal distribution with 90% of values between 1 and 4 (lower bound at 0)
-      x = meta(1, 4, {med:2}, 0.9)(),    // an unbounded skewed infinite distribution with a median at 2
+const a = meta(1, 4, {ci:0.5})(),        // normal distribution with 50% of values between 1 and 4
+      b = meta`1 4 @50%`,                // same as above
+      c = meta(1, 4, {min:0}, 0.9)(),    // lognormal distribution with 90% of values between 1 and 4 (lower bound at 0)
+      d = meta`[0 1 4 @.9`               // same as above
+      e = meta(1, 2, 4)(),               // an unbounded skewed infinite distribution with a median at 2
+      f = meta`1 2 4`(),                 // same as above
+      g = meta`[0 10% 90% 1]`            // distribution 'close' to a uniform distribution
 ```
 
 ## API
 
 Arguments                         | Returns              | Notes
 :--------                         | :------              | :----
-`low, top [,{min, med, max, ci}]` | `rndNumberGenerator` | Only `low` and `top` are required
+`...points [,{min, max, ci=.8}]`  | `rndNumberGenerator` | 0 to 3 points
 
 Arguments            | Notes
  :--------           | :----
  `[min]`             | Optional, a lower bound
- `low`               | The low end of the stated confidence interval
- `[med]`             | Optional median value
- `top`               | The top end of the stated confidence interval
  `[max]              | Optional, an upper bound
  `[ci=0.8]           | Optional, The confidence interval, defaults to 80%
 

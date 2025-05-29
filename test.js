@@ -2,9 +2,11 @@ import icdf from 'norm-dist/icdf-voutier.js'
 import t from 'assert-op'
 import a from 'assert-op/assert.js'
 import meta from './index.js'
+import parser from './parser.js'
 
-function test(low, top, [min, med, max]=[], ci=0.8) {
-	const rg = meta(low, top, {min, med, max, ci}),
+function test(...args) {
+	const ci = 0.8
+	const rg = meta(...args),
 				xp = rg(icdf( (1-ci)/2 )),
 				xq = rg(icdf( (1+ci)/2 ))
 	//console.log(xp, xq, low, med, top, rg(0))
@@ -16,11 +18,20 @@ function test(low, top, [min, med, max]=[], ci=0.8) {
 	a('<', rg(Number.MIN_VALUE), xq, 'monotonic')
 	a('<=', xq, rg(Number.MAX_VALUE), 'monotonic')
 	a('<=', rg(Number.MAX_VALUE), rg(Infinity), 'monotonic')
-	a('<', Math.abs(xp-low), 1e-15, 'correct lower range')
-	a('<', Math.abs(xq-top), 1e-15, 'correct upper range')
-	if (med !== undefined) a('<', Math.abs(rg(0)-med), 2e-16, 'correct median')
+	const points = args.filter(x => typeof x === 'number' && !isNaN(x) && isFinite(x))
+	if (points.length === 0) a('<', Math.abs(rg(0)), 1e-15, 'correct median')
+	else if (points.length === 1) a('<', Math.abs(rg(0)-points[0]), 1e-15, 'correct median')
+	else {
+		a('<', Math.abs(xp-points[0]), 1e-15, 'correct lower range')
+		a('<', Math.abs(xq-points[points.length-1]), 1e-15, 'correct upper range')
+	}
+	if (points.length === 3) a('<', Math.abs(rg(0)-points[1]), 2e-16, 'correct median')
 }
-
+t('meta-norm1', a => {
+	test(1)
+	test(-1)
+	test(0)
+})
 t('meta-norm2', a => {
 	test(0.25, 0.75)
 	test(0.05, 0.10)
@@ -29,51 +40,59 @@ t('meta-norm2', a => {
 	a('throws', ()=>meta(2,1))
 })
 t('meta-norm3', a => {
-	test(0.25, .750, [, .501])
-	test(0.05, .100, [, .070])
-	test(0.05, .950, [, .500])
-	test(0.90, .950, [, .905])
-	a('throws', ()=>meta(2,3,{med:1}))
+	test(0.25, .500, .750)
+	test(0.05, .070, .100)
+	test(0.05, .500, .950)
+	test(0.90, .905, .950)
+	a('throws', ()=>meta(2,1,3))
 })
 t('meta-low', a => {
-	test(0.25, 0.75, [-1, ])
-	test(0.05, 0.10, [-1, ])
-	test(0.05, 0.95, [-1, ])
-	test(0.90, 0.95, [-1, ])
+	test(0.25, 0.75, {min:-1})
+	test(0.05, 0.10, {min:-1})
+	test(0.05, 0.95, {min:-1})
+	test(0.90, 0.95, {min:-1})
 	a('throws', ()=>meta(-2,1,{min:-1,med:1}))
 })
 t('meta-low3', a => {
-	test(0.25, 0.75, [-1, .30,  ])
-	test(0.05, 0.10, [-1, .06,  ])
-	test(0.05, 0.95, [-1, .40,  ])
-	test(0.90, 0.95, [-1, .94,  ])
-	a('throws', ()=>meta(0,1,{min:-1,med:-1}))
+	test(0.25, .30, 0.75, {min:-1})
+	test(0.05, .06, 0.10, {min:-1})
+	test(0.05, .40, 0.95, {min:-1})
+	test(0.90, .94, 0.95, {min:-1})
+	//a('throws', ()=>meta(0,1,{min:-1,med:-1}))
 })
 t('meta-high', a => {
-	test(0.25, 0.75, [, , 2])
-	test(0.05, 0.10, [, , 2])
-	test(0.05, 0.95, [, , 2])
-	test(0.90, 0.95, [, , 2])
+	test(0.25, 0.75, {max:2})
+	test(0.05, 0.10, {max:2})
+	test(0.05, 0.95, {max:2})
+	test(0.90, 0.95, {max:2})
 	a('throws', ()=>meta(2,3,{max:2}))
 })
 t('meta-high3', a => {
-	test(0.25, 0.75, [, .70, 2])
-	test(0.05, 0.10, [, .07, 2])
-	test(0.05, 0.95, [, .40, 2])
-	test(0.90, 0.95, [, .92, 2])
-	a('throws', ()=>meta(1,2,{med:3,max:4}))
+	test(0.25, .70, 0.75, {max:2})
+	test(0.05, .07, 0.10, {max:2})
+	test(0.05, .40, 0.95, {max:2})
+	test(0.90, .92, 0.95, {max:2})
+	a('throws', ()=>meta(1,3,2,{max:4}))
 })
 t('meta-low-high', a => {
-	test(0.25, 0.75, [-1, ,2])
-	test(0.05, 0.10, [-1, ,2])
-	test(0.05, 0.95, [-1, ,2])
-	test(0.90, 0.95, [-1, ,2])
+	test(0.25, 0.75, {min:-1, max:2})
+	test(0.05, 0.10, {min:-1, max:2})
+	test(0.05, 0.95, {min:-1, max:2})
+	test(0.90, 0.95, {min:-1, max:2})
 	a('throws', ()=>meta(-2, 3, {min:-1,max:2}))
 })
 t('meta-low-high3', a => {
-	test(0.25, 0.75, [-1, .30, 2])
-	test(0.05, 0.10, [-1, .09, 2])
-	test(0.05, 0.95, [-1, .10, 2])
-	test(0.90, 0.95, [-1, .94, 2])
-	a('throws', ()=>meta(-2, 3, {low:-1,med:-2,top:2}))
+	test(0.25, .30, 0.75, {min:-1, max:2})
+	test(0.05, .09, 0.10, {min:-1, max:2})
+	test(0.05, .10, 0.95, {min:-1, max:2})
+	test(0.90, .94, 0.95, {min:-1, max:2})
+	a('throws', ()=>meta(-2, -2, 3, {min:-1,max:2}))
+})
+t('parser', a => {
+	const {points, options, risks} = parser`[-50% -.1 1 1,000 2_000] @90% risk1:5% risk2:.60`
+	a('{==}', points, [-.1, 1, 1000])
+	a('{==}', options, {min:-.5, max:2000, ci:0.9})
+	a('===', meta``(0), 0)
+	a('===', meta`1`(0), 1)
+	a('===', meta(1)(0), 1)
 })

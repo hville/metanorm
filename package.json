@@ -2,7 +2,7 @@
   "name": "@hugov/metanorm",
   "type": "module",
   "main": "index.js",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "random number generator for specified confidence interval",
   "keywords": [
     "stats",
@@ -27,7 +27,9 @@
   },
   "scripts": {
     "test": "node test",
-    "prepublishOnly": "npm test"
+    "prepublishOnly": "npm test",
+    "pub": "npm publish --access public",
+    "pub:dry": "npm publish --dry-run --access public"
   },
   "author": "Hugo Villeneuve",
   "license": "MIT",

@@ -1,7 +1,7 @@
 import icdf from 'norm-dist/icdf-voutier.js'
 import t from 'assert-op'
 import a from 'assert-op/assert.js'
-import meta from './index.js'
+import {default as meta, parse} from './index.js'
 import parser from './parser.js'
 
 function test(...args) {
@@ -92,7 +92,7 @@ t('parser', a => {
 	const {points, options, risks} = parser`[-50% -.1 1 1,000 2_000] @90% risk1:5% risk2:.60`
 	a('{==}', points, [-.1, 1, 1000])
 	a('{==}', options, {min:-.5, max:2000, ci:0.9})
-	a('===', meta``(0), 0)
-	a('===', meta`1`(0), 1)
+	a('===', parse``(0), 0)
+	a('===', parse`1`(0), 1)
 	a('===', meta(1)(0), 1)
 })

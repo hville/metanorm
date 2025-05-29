@@ -2,19 +2,27 @@ import icdf from 'norm-dist/icdf-voutier.js'
 import parser from './parser.js'
 
 /**
- * MetaNormal Distribution
- * @param {number} low - confidence interval low end at (1-conf)/2
- * @param {number} top - confidence interval top end (1+conf)/2
- * @param {number} [min] - range lower bound
- * @param {number} [med] - range lower bound
- * @param {number} [max] - higher bound
- * @param {number} [conf] - confidence interval
+ * Parser
+ * @param {TemplateStringsArray} strings - An array of string literals from the template.
+ * @param {...string} values - The interpolated values from the template.
  * @returns {number => number} - random number generator
  */
-export default function(...args) {
-	const {points, options} = Array.isArray(args[0])
-		? parser(...args)
-		: {points:args, options: typeof args[args.length-1] === 'object' ? args.pop() : {}}
+export function parse(...args) {
+	const {points, options, risks} = parser(...args)
+	return metanorm(...points, options)
+}
+
+/**
+ * MetaNormal Distribution
+ * @param {...number} points - confidence interval low end at (1-conf)/2
+ * @param {Object} [options] - min, max, confidence interval
+ * @returns {number => number} - random number generator
+ */
+export default function metanorm(...args) {
+	const {points, options} = {
+		points:args,
+		options: typeof args[args.length-1] === 'object' ? args.pop() : {}
+	}
 	const {min, max, ci=0.8} = options,
 				low = points[0],
 				top = points[points.length-1]

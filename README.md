@@ -10,15 +10,15 @@
 ## Example
 
 ```javascript
-import meta from 'metanorm'
+import {default as meta, parse} from './index.js'
 
 const a = meta(1, 4, {ci:0.5})(),        // normal distribution with 50% of values between 1 and 4
-      b = meta`1 4 @50%`,                // same as above
+      b = parse`1 4 @50%`,                // same as above
       c = meta(1, 4, {min:0}, 0.9)(),    // lognormal distribution with 90% of values between 1 and 4 (lower bound at 0)
-      d = meta`[0 1 4 @.9`               // same as above
+      d = parse`[0 1 4 @.9`               // same as above
       e = meta(1, 2, 4)(),               // an unbounded skewed infinite distribution with a median at 2
-      f = meta`1 2 4`(),                 // same as above
-      g = meta`[0 10% 90% 1]`            // distribution 'close' to a uniform distribution
+      f = parse`1 2 4`(),                 // same as above
+      g = parse`[0 10% 90% 1]`            // distribution 'close' to a uniform distribution
 ```
 
 ## API

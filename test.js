@@ -4,9 +4,9 @@ import a from 'assert-op/assert.js'
 import {default as meta, parse} from './index.js'
 import parser from './parser.js'
 
-function test(...args) {
+function test(...points) {
 	const ci = 0.8
-	const rg = meta(...args),
+	const rg = meta(...points),
 				xp = rg(icdf( (1-ci)/2 )),
 				xq = rg(icdf( (1+ci)/2 ))
 	//console.log(xp, xq, low, med, top, rg(0))
@@ -18,14 +18,25 @@ function test(...args) {
 	a('<', rg(Number.MIN_VALUE), xq, 'monotonic')
 	a('<=', xq, rg(Number.MAX_VALUE), 'monotonic')
 	a('<=', rg(Number.MAX_VALUE), rg(Infinity), 'monotonic')
-	const points = args.filter(x => typeof x === 'number' && !isNaN(x) && isFinite(x))
+	const {min, max} = typeof points.at(-1) === 'object' ? points.pop() : {}
+	//check median if
 	if (points.length === 0) a('<', Math.abs(rg(0)), 1e-15, 'correct median')
 	else if (points.length === 1) a('<', Math.abs(rg(0)-points[0]), 1e-15, 'correct median')
-	else {
+	else if (points.length === 3) a('<', Math.abs(rg(0)-points[1]), 1e-15, 'correct median')
+	//check confidence interval range if defined
+	if (points.length > 1) {
 		a('<', Math.abs(xp-points[0]), 1e-15, 'correct lower range')
-		a('<', Math.abs(xq-points[points.length-1]), 1e-15, 'correct upper range')
+		a('<', Math.abs(xq-points.at(-1)), 1e-15, 'correct upper range')
 	}
-	if (points.length === 3) a('<', Math.abs(rg(0)-points[1]), 2e-16, 'correct median')
+	//check min/max if defined
+	if (min !== undefined) { //fail meta-low; meta-low3; meta-low-high; meta-low-high3
+		a('<', Math.abs(rg(-Infinity)- min), 1e-15, 'correct min')
+		a('<', Math.abs(rg(-Number.MAX_VALUE)- min), 1e-15, 'correct min')
+	}
+	if (max !== undefined) {
+		a('<', Math.abs(rg(Infinity)- max), 1e-15, 'correct max')
+		a('<', Math.abs(rg(Number.MAX_VALUE)- max), 1e-15, 'correct max')
+	}
 }
 t('meta-norm1', a => {
 	test(1)

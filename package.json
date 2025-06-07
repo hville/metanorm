@@ -2,7 +2,7 @@
   "name": "@hugov/metanorm",
   "type": "module",
   "main": "index.js",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "random number generator for specified confidence interval",
   "keywords": [
     "stats",

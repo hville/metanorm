@@ -88,8 +88,8 @@ function params(ci, points) {
 	if (points.length === 2) return [(t+l)/2, (t-l)/(2*zq), 0, 0]
 	const m = points[1],
 				α = 2*(m-l)/(t-l) - 1,
-				c = 2, // TODO safety constant of 2 to avoid sign switch at Infinity
-				k = c * Math.abs(α) / (zq*(1-Math.abs(α)))
+				c = Math.abs(α) + Number.EPSILON, // safety against precision errors
+				k = c / (zq*(1-c))
 	return k > Number.MIN_VALUE
 		? [m, (t-l)/(2*zq), k*(t+l-2*m)*(1+k*zq)/(2*k*zq*zq), k]
 		: [(t+l)/2, (t-l)/(2*zq), 0, 0]
